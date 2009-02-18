@@ -1,13 +1,15 @@
 package data_objects;
 
 import data_objects.drivers.DriverDefinition;
+import java.io.UnsupportedEncodingException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.Ruby;
@@ -95,7 +97,11 @@ public class Command extends RubyObject {
         int affectedCount = 0;
         PreparedStatement sqlStatement = null;
         java.sql.ResultSet keys = null;
-        String sqlText = prepareSqlTextForPs(api.getInstanceVariable(recv, "@text").asJavaString(), recv, args);
+
+
+//        String sqlText = prepareSqlTextForPs(api.getInstanceVariable(recv, "@text").asJavaString(), recv, args);
+        String doSqlText = api.convertToRubyString(api.getInstanceVariable(recv, "@text")).getUnicodeValue();
+        String sqlText = prepareSqlTextForPs(doSqlText, recv, args);
 
         try {
             if (driver.supportsConnectionPrepareStatementMethodWithGKFlag()) {
@@ -366,12 +372,11 @@ public class Command extends RubyObject {
      * @param runtime
      * @param rs
      * @return number of rows
-     * @throws java.sql.SQLFeatureNotSupportedException Shouldn't be thrown (we use DriverDefinition)
      * @throws java.sql.SQLException
      */
     private static IRubyObject countRows(ResultSet rs,java.sql.Connection conn,
             String sqlText,Ruby runtime, IRubyObject recv, IRubyObject[] args)
-            throws SQLFeatureNotSupportedException, SQLException{
+            throws SQLException{
          int rowCount = 0;
          if(driver.supportsJdbcScrollableResultSets()){
             int pos = rs.getRow();
@@ -577,7 +582,8 @@ public class Command extends RubyObject {
             RubyBigDecimal rbBigDec = (RubyBigDecimal) arg;
             ps.setBigDecimal(idx, rbBigDec.getValue());
         } else {
-            ps.setString(idx, arg.toString());
+//            ps.setString(idx, arg.toString());
+            ps.setString(idx, api.convertToRubyString(arg).getUnicodeValue());
         }
     }
 

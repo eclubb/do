@@ -76,6 +76,8 @@ describe DataObjects::Mysql do
   end
 
   it "should raise an error when opened with an invalid server uri" do
+    pending 'causing a hang in JRuby' if JRUBY
+
     def connecting_with(uri)
       lambda { DataObjects::Connection.new(uri) }
     end
@@ -227,6 +229,22 @@ describe DataObjects::Mysql::Reader do
     name = "Билли Боб"
     id = insert("INSERT INTO users (name) VALUES ('#{name}')")
 
+    select("SELECT name from users WHERE id = ?", [String], id) do |reader|
+      reader.values[0].should == name
+    end
+  end
+
+  it "should correctly interpret extended characters in sql statements" do
+    name = "Билли Боб"
+    id = insert("INSERT INTO users (name) VALUES ('#{name}')")
+    select("SELECT name from users WHERE id = ?", [String], id) do |reader|
+      reader.values[0].should == name
+    end
+  end
+
+  it "should correctly interpret extended characters in args of sql statements" do
+    name = "Билли Боб"
+    id = insert("INSERT INTO users (name) VALUES (?)", name)
     select("SELECT name from users WHERE id = ?", [String], id) do |reader|
       reader.values[0].should == name
     end
